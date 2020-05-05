@@ -298,17 +298,21 @@ class SSHUserAuthClient(userauth.SSHUserAuthClient):
 
     def getGenericAnswers(self, name, instruction, prompts):
         responses = []
-        with self._replaceStdoutStdin():
-            if name:
-                print(name.decode("utf-8"))
-            if instruction:
-                print(instruction.decode("utf-8"))
-            for prompt, echo in prompts:
-                prompt = prompt.decode("utf-8")
-                if echo:
-                    responses.append(raw_input(prompt))
-                else:
-                    responses.append(getpass.getpass(prompt))
+        # Only interact with the user if there are actually prompts for them to interact with.
+        # In some PAM use cases, keyboard-interactive is used as an AuthenticationMethod
+        # though it does not actually require any interaction from the user
+        if prompts:
+            with self._replaceStdoutStdin():
+                if name:
+                    print(name.decode("utf-8"))
+                if instruction:
+                    print(instruction.decode("utf-8"))
+                for prompt, echo in prompts:
+                    prompt = prompt.decode("utf-8")
+                    if echo:
+                        responses.append(raw_input(prompt))
+                    else:
+                        responses.append(getpass.getpass(prompt))
         return defer.succeed(responses)
 
 
